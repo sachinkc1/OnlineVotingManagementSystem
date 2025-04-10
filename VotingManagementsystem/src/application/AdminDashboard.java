@@ -6,33 +6,40 @@ import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
-import javafx.scene.effect.DropShadow;
 import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
+import javafx.scene.text.Text;
+import javafx.scene.text.TextAlignment;
+import javafx.stage.Modality;
 import javafx.stage.Stage;
+import javafx.stage.StageStyle;
 import models.User;
 import models.Poll;
-import services.DatabaseConnection;
 import services.UserService;
 import services.PollService;
 import services.DatabaseUserService;
 import services.DatabasePollService;
 
+/**
+ * Inheritance:public class adminDashboard extends Application {
+ */
 public class AdminDashboard extends Application {
-    private UserService userService;
+  /**
+   * encapsulation
+   * polymorphism
+   */
+	
+	
+	private UserService userService;
     private PollService pollService;
+    
     private TableView<User> userTableView;
     private TableView<Poll> pollTableView;
-    private TabPane tabPane;
-    
-    // Color scheme
-    private final String PRIMARY_COLOR = "#3498db";
-    private final String SECONDARY_COLOR = "#2c3e50";
-    private final String ACCENT_COLOR = "#e74c3c";
-    private final String BACKGROUND_COLOR = "#ecf0f1";
-    private final String CARD_COLOR = "#ffffff";
+    private StackPane contentArea;
+    private VBox userManagementView;
+    private VBox pollManagementView;
 
     public static void main(String[] args) {
         launch(args);
@@ -44,249 +51,243 @@ public class AdminDashboard extends Application {
         setupUI(primaryStage);
     }
 
+    /**
+     * Initialize database connections and service classes
+     * encapsulation
+     */
     private void initializeServices() {
-        DatabaseConnection dbConnection = new DatabaseConnection();
-        userService = new DatabaseUserService(dbConnection);
-        pollService = new DatabasePollService(dbConnection);
+        userService = new DatabaseUserService();
+        pollService = new DatabasePollService();
     }
 
+    /**
+     * Set up the main UI components
+     */
     private void setupUI(Stage stage) {
         BorderPane root = new BorderPane();
-        root.setStyle("-fx-background-color: " + BACKGROUND_COLOR + ";");
-        
         root.setTop(createHeader());
         root.setLeft(createSidebar());
-        root.setCenter(createMainContent());
+
+        // Create content area
+        contentArea = new StackPane();
+        contentArea.getStyleClass().add("content-area");
+        root.setCenter(contentArea);
+
+        // Create the views
+        userManagementView = createUserManagementPane();
+        pollManagementView = createPollManagementPane();
+
+        // Show poll management view by default
+        showPollManagementView();
 
         Scene scene = new Scene(root, 1200, 800);
+        // Load CSS
+        scene.getStylesheets().add(getClass().getResource("/resources/style1.css").toExternalForm());
+
         stage.setTitle("Admin Dashboard");
         stage.setScene(scene);
+        stage.setMinWidth(900);
+        stage.setMinHeight(600);
         stage.show();
     }
-    
+
+    /**
+     * Create the header bar with title and logout button
+     */
     private HBox createHeader() {
         HBox header = new HBox();
-        header.setPadding(new Insets(15, 25, 15, 25));
+        header.getStyleClass().add("header");
         header.setSpacing(10);
         header.setAlignment(Pos.CENTER_LEFT);
-        header.setStyle("-fx-background-color: " + SECONDARY_COLOR + ";");
-        
-        Label title = new Label("Election Admin Dashboard");
-        title.setFont(Font.font("Arial", FontWeight.BOLD, 20));
-        title.setTextFill(Color.WHITE);
-        
+
+        Label title = new Label("Admin Dashboard");
+        title.getStyleClass().add("header-title");
+
         Region spacer = new Region();
         HBox.setHgrow(spacer, Priority.ALWAYS);
-        
-        Button logoutBtn = createButton("Logout", ACCENT_COLOR);
-        
+
+        Button logoutBtn = createButton("Logout", "button-accent");
+        logoutBtn.setOnAction(e -> handleLogout());
+
         header.getChildren().addAll(title, spacer, logoutBtn);
-        
         return header;
     }
-    
+
+    /**
+     * Handle user logout
+     */
+    private void handleLogout() {
+        Alert confirmation = new Alert(Alert.AlertType.CONFIRMATION, 
+                "Are you sure you want to log out?", 
+                ButtonType.YES, ButtonType.NO);
+        confirmation.setTitle("Confirm Logout");
+        confirmation.setHeaderText("Logout");
+        confirmation.showAndWait().ifPresent(response -> {
+            if (response == ButtonType.YES) {
+                try {
+                    // Open login screen
+                    Login login = new Login();
+                    login.start(new Stage());
+                    
+                    // Close this window
+                    ((Stage) contentArea.getScene().getWindow()).close();
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
+        });
+    }
+
+    /**
+     * Create the sidebar with navigation buttons
+     */
     private VBox createSidebar() {
         VBox sidebar = new VBox();
-        sidebar.setPrefWidth(220);
+        sidebar.getStyleClass().add("sidebar");
         sidebar.setSpacing(5);
-        sidebar.setPadding(new Insets(15));
-        sidebar.setStyle("-fx-background-color: " + SECONDARY_COLOR + ";");
-        
+        sidebar.setPrefWidth(220);
+
         Label dashboardLabel = new Label("DASHBOARD");
-        dashboardLabel.setFont(Font.font("Arial", FontWeight.BOLD, 12));
-        dashboardLabel.setTextFill(Color.LIGHTGRAY);
-        dashboardLabel.setPadding(new Insets(10, 0, 10, 10));
-        
-        Button usersBtn = createSidebarButton("User Management", true);
-        Button pollsBtn = createSidebarButton("Poll Management", false);
-        Button reportsBtn = createSidebarButton("Reports", false);
-        
+        dashboardLabel.getStyleClass().add("sidebar-label");
+
+        Button usersBtn = createSidebarButton("User Management", false);
+        Button pollsBtn = createSidebarButton("Poll Management", true);
+
         // Event handlers for sidebar buttons
         usersBtn.setOnAction(e -> {
-            tabPane.getSelectionModel().select(0); // Select User Management tab
-            highlightSidebarButton(usersBtn, pollsBtn, reportsBtn);
+            showUserManagementView();
+            highlightSidebarButton(usersBtn, pollsBtn);
         });
-        
+
         pollsBtn.setOnAction(e -> {
-            tabPane.getSelectionModel().select(1); // Select Poll Management tab
-            highlightSidebarButton(pollsBtn, usersBtn, reportsBtn);
+            showPollManagementView();
+            highlightSidebarButton(pollsBtn, usersBtn);
         });
-        
+
         sidebar.getChildren().addAll(
-            dashboardLabel,
-            usersBtn, 
-            pollsBtn, 
-            reportsBtn
+                dashboardLabel,
+                usersBtn,
+                pollsBtn 
         );
-        
+
         return sidebar;
     }
-    
+
+    /**
+     * Show the user management view
+     */
+    private void showUserManagementView() {
+        contentArea.getChildren().clear();
+        contentArea.getChildren().add(userManagementView);
+        loadUserData();
+    }
+
+    /**
+     * Show the poll management view
+     */
+    private void showPollManagementView() {
+        contentArea.getChildren().clear();
+        contentArea.getChildren().add(pollManagementView);
+        loadPollData();
+    }
+
+    /**
+     * Highlight the active sidebar button and reset others
+     */
     private void highlightSidebarButton(Button active, Button... inactive) {
-        // Style active button
-        active.setStyle(
-            "-fx-background-color: " + PRIMARY_COLOR + ";" +
-            "-fx-text-fill: white;" +
-            "-fx-background-radius: 5;"
-        );
-        
-        // Style inactive buttons
+        active.getStyleClass().add("sidebar-button-active");
         for (Button button : inactive) {
-            button.setStyle(
-                "-fx-background-color: transparent;" +
-                "-fx-text-fill: white;" +
-                "-fx-background-radius: 5;"
-            );
+            button.getStyleClass().remove("sidebar-button-active");
         }
     }
-    
+
+    /**
+     * abstraction Create a styled sidebar button
+     */
     private Button createSidebarButton(String text, boolean selected) {
         Button button = new Button(text);
-        button.setPrefWidth(200);
-        button.setPrefHeight(40);
-        button.setAlignment(Pos.CENTER_LEFT);
-        button.setPadding(new Insets(0, 0, 0, 10));
-        
+        button.getStyleClass().add("sidebar-button");
         if (selected) {
-            button.setStyle(
-                "-fx-background-color: " + PRIMARY_COLOR + ";" +
-                "-fx-text-fill: white;" +
-                "-fx-background-radius: 5;"
-            );
-        } else {
-            button.setStyle(
-                "-fx-background-color: transparent;" +
-                "-fx-text-fill: white;" +
-                "-fx-background-radius: 5;"
-            );
+            button.getStyleClass().add("sidebar-button-active");
         }
-        
-        button.setOnMouseEntered(e -> {
-            if (!button.getStyle().contains(PRIMARY_COLOR)) {
-                button.setStyle(
-                    "-fx-background-color: rgba(52, 152, 219, 0.3);" +
-                    "-fx-text-fill: white;" +
-                    "-fx-background-radius: 5;"
-                );
-            }
-        });
-        
-        button.setOnMouseExited(e -> {
-            if (!button.getStyle().contains(PRIMARY_COLOR)) {
-                button.setStyle(
-                    "-fx-background-color: transparent;" +
-                    "-fx-text-fill: white;" +
-                    "-fx-background-radius: 5;"
-                );
-            }
-        });
-        
         return button;
     }
-    
-    private TabPane createMainContent() {
-        tabPane = new TabPane();
-        tabPane.setTabClosingPolicy(TabPane.TabClosingPolicy.UNAVAILABLE);
-        tabPane.getStyleClass().add("floating");
-        tabPane.setStyle("-fx-background-color: transparent;");
-        
-        // User Management Tab
-        Tab userTab = new Tab("User Management");
-        userTab.setContent(createUserManagementPane());
-        
-        // Poll Management Tab
-        Tab pollTab = new Tab("Poll Management");
-        pollTab.setContent(createPollManagementPane());
-        
-        tabPane.getTabs().addAll(userTab, pollTab);
-        
-        // Add listener to update sidebar button highlights when tab changes
-        tabPane.getSelectionModel().selectedIndexProperty().addListener((obs, oldVal, newVal) -> {
-            // This would access the sidebar buttons and update their styles
-            // For now, we'll handle this from the sidebar button click events
-        });
-        
-        return tabPane;
-    }
-    
+
+    /**
+     * Create the user management panel
+     */
     private VBox createUserManagementPane() {
         VBox pane = new VBox(20);
-        pane.setPadding(new Insets(25));
-        pane.setStyle("-fx-background-color: " + BACKGROUND_COLOR + ";");
+        pane.getStyleClass().add("content-area");
 
         // Header section
         HBox header = new HBox();
         header.setAlignment(Pos.CENTER_LEFT);
-        
+        header.setSpacing(10);
         Label title = new Label("User Management");
-        title.setFont(Font.font("Arial", FontWeight.BOLD, 24));
-        title.setTextFill(Color.valueOf(SECONDARY_COLOR));
-        
+        title.getStyleClass().add("section-title");
         Region spacer = new Region();
         HBox.setHgrow(spacer, Priority.ALWAYS);
-        
         TextField searchField = createTextField("Search users...");
-        Button searchBtn = createButton("Search", PRIMARY_COLOR);
-        
+        Button searchBtn = createButton("Search", "button-primary");
         header.getChildren().addAll(title, spacer, searchField, searchBtn);
-        header.setSpacing(10);
+
+        // User count card
+        VBox userCountCard = createStatsCard("Total Users", String.valueOf(userService.getUserCount()), "stats-primary");
+        userCountCard.setPrefWidth(200);
 
         // Table with card styling
         VBox tableCard = createCard();
-        
+
         // Create user table
         userTableView = new TableView<>();
         userTableView.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
         userTableView.setPlaceholder(new Label("No users found"));
         setupUserTableColumns();
-        
         tableCard.getChildren().add(userTableView);
 
         // Form card
         VBox formCard = createCard();
         formCard.setSpacing(15);
-        
-        Label formTitle = new Label("Add/Edit User");
-        formTitle.setFont(Font.font("Arial", FontWeight.BOLD, 16));
-        
+        Label formTitle = new Label("Edit User");
+        formTitle.getStyleClass().add("form-title");
+
         // Form fields in grid
         GridPane form = new GridPane();
         form.setHgap(15);
         form.setVgap(15);
         form.setPadding(new Insets(15, 0, 15, 0));
-        
+
         TextField nameField = createTextField("Full Name");
         TextField emailField = createTextField("Email Address");
         TextField phoneField = createTextField("Phone Number");
-        ComboBox<String> genderCombo = new ComboBox<>(FXCollections.observableArrayList("Male", "Female", "Other"));
+        ComboBox<String> genderCombo = new ComboBox<>(
+                FXCollections.observableArrayList("Male", "Female")
+        );
         genderCombo.setPromptText("Select Gender");
-        styleComboBox(genderCombo);
-        
+        genderCombo.getStyleClass().add("combo-box");
+
         // Add form fields to grid
         form.addRow(0, createFormLabel("Name:"), nameField);
         form.addRow(1, createFormLabel("Email:"), emailField);
         form.addRow(2, createFormLabel("Phone:"), phoneField);
         form.addRow(3, createFormLabel("Gender:"), genderCombo);
-        
+
         // Make fields expand to fill available space
         GridPane.setHgrow(nameField, Priority.ALWAYS);
         GridPane.setHgrow(emailField, Priority.ALWAYS);
         GridPane.setHgrow(phoneField, Priority.ALWAYS);
         GridPane.setHgrow(genderCombo, Priority.ALWAYS);
-        
+
         // Action buttons
         HBox buttons = new HBox(10);
         buttons.setAlignment(Pos.CENTER_RIGHT);
-        
-        Button clearBtn = createButton("Clear", "#95a5a6");
-        Button addBtn = createButton("Add User", PRIMARY_COLOR);
-        Button updateBtn = createButton("Update", "#f39c12");
-        Button deleteBtn = createButton("Delete", ACCENT_COLOR);
-        
-        buttons.getChildren().addAll(clearBtn, deleteBtn, updateBtn, addBtn);
-        
+        Button clearBtn = createButton("Clear", "button-muted");
+        Button updateBtn = createButton("Update", "button-warning");
+        Button deleteBtn = createButton("Delete", "button-accent");
+        buttons.getChildren().addAll(clearBtn, deleteBtn, updateBtn);
+
         // Event Handlers
-        addBtn.setOnAction(e -> addUser(nameField, emailField, phoneField, genderCombo));
         updateBtn.setOnAction(e -> updateUser(nameField, emailField, phoneField, genderCombo));
         deleteBtn.setOnAction(e -> deleteUser());
         clearBtn.setOnAction(e -> {
@@ -294,8 +295,9 @@ public class AdminDashboard extends Application {
             emailField.clear();
             phoneField.clear();
             genderCombo.getSelectionModel().clearSelection();
+            userTableView.getSelectionModel().clearSelection();
         });
-        
+
         // User selection handling
         userTableView.getSelectionModel().selectedItemProperty().addListener((obs, oldSelection, newSelection) -> {
             if (newSelection != null) {
@@ -309,135 +311,98 @@ public class AdminDashboard extends Application {
         formCard.getChildren().addAll(formTitle, form, buttons);
 
         // Add all components to main pane
-        pane.getChildren().addAll(header, tableCard, formCard);
-        loadUserData();
-        
+        pane.getChildren().addAll(header, userCountCard, tableCard, formCard);
         return pane;
     }
-    
+
+    /**
+     * Create a styled card container
+     */
     private VBox createCard() {
         VBox card = new VBox();
-        card.setStyle(
-            "-fx-background-color: " + CARD_COLOR + ";" +
-            "-fx-background-radius: 8px;" +
-            "-fx-padding: 15px;"
-        );
-        
-        DropShadow dropShadow = new DropShadow();
-        dropShadow.setRadius(5.0);
-        dropShadow.setOffsetX(0);
-        dropShadow.setOffsetY(2.0);
-        dropShadow.setColor(Color.color(0, 0, 0, 0.1));
-        card.setEffect(dropShadow);
-        
+        card.getStyleClass().add("card");
         return card;
     }
-    
+
+    /**
+     * Create a form field label
+     */
     private Label createFormLabel(String text) {
         Label label = new Label(text);
-        label.setFont(Font.font("Arial", FontWeight.NORMAL, 14));
+        label.getStyleClass().add("form-label");
         return label;
     }
-    
+
+    /**
+     * Create a styled text field
+     */
     private TextField createTextField(String promptText) {
         TextField textField = new TextField();
         textField.setPromptText(promptText);
-        textField.setPrefHeight(35);
-        textField.setStyle(
-            "-fx-background-radius: 4px;" +
-            "-fx-border-radius: 4px;" +
-            "-fx-border-color: #dcdde1;" +
-            "-fx-border-width: 1px;" +
-            "-fx-padding: 5px 10px;"
-        );
+        textField.getStyleClass().add("text-field");
         return textField;
     }
-    
-    private void styleComboBox(ComboBox<?> comboBox) {
-        comboBox.setPrefHeight(35);
-        comboBox.setStyle(
-            "-fx-background-radius: 4px;" +
-            "-fx-border-radius: 4px;" +
-            "-fx-border-color: #dcdde1;" +
-            "-fx-border-width: 1px;" +
-            "-fx-padding: 5px 10px;"
-        );
-    }
-    
-    private Button createButton(String text, String color) {
+
+    /**
+     * Create a styled button
+     */
+    private Button createButton(String text, String styleClass) {
         Button button = new Button(text);
-        button.setPrefHeight(35);
-        button.setPadding(new Insets(0, 15, 0, 15));
-        button.setStyle(
-            "-fx-background-color: " + color + ";" +
-            "-fx-text-fill: white;" +
-            "-fx-font-weight: bold;" +
-            "-fx-background-radius: 4px;"
-        );
-        
-        button.setOnMouseEntered(e -> 
-            button.setStyle(
-                "-fx-background-color: derive(" + color + ", -10%);" +
-                "-fx-text-fill: white;" +
-                "-fx-font-weight: bold;" +
-                "-fx-background-radius: 4px;"
-            )
-        );
-        
-        button.setOnMouseExited(e -> 
-            button.setStyle(
-                "-fx-background-color: " + color + ";" +
-                "-fx-text-fill: white;" +
-                "-fx-font-weight: bold;" +
-                "-fx-background-radius: 4px;"
-            )
-        );
-        
+        button.getStyleClass().add(styleClass);
         return button;
     }
 
+    /**
+     * Set up columns for the user table
+     */
     private void setupUserTableColumns() {
         TableColumn<User, String> nameCol = new TableColumn<>("Full Name");
         nameCol.setCellValueFactory(cellData -> cellData.getValue().fullNameProperty());
-        
+
         TableColumn<User, String> emailCol = new TableColumn<>("Email Address");
         emailCol.setCellValueFactory(cellData -> cellData.getValue().emailProperty());
-        
+
         TableColumn<User, String> phoneCol = new TableColumn<>("Phone Number");
         phoneCol.setCellValueFactory(cellData -> cellData.getValue().phoneProperty());
-        
+
         TableColumn<User, String> genderCol = new TableColumn<>("Gender");
         genderCol.setCellValueFactory(cellData -> cellData.getValue().genderProperty());
-        
+
         userTableView.getColumns().addAll(nameCol, emailCol, phoneCol, genderCol);
     }
 
-    private void addUser(TextField name, TextField email, TextField phone, ComboBox<String> gender) {
-        User user = new User(0, name.getText(), email.getText(), phone.getText(), gender.getValue());
-        userService.addUser(user);
-        loadUserData();
-        
-        // Show success notification
-        showNotification("User added successfully");
-    }
-
+    /**
+     * Update an existing user
+     */
     private void updateUser(TextField name, TextField email, TextField phone, ComboBox<String> gender) {
         User selected = userTableView.getSelectionModel().getSelectedItem();
         if (selected != null) {
+            // Validate inputs
+            if (name.getText().isEmpty() || email.getText().isEmpty() ||
+                    phone.getText().isEmpty() || gender.getValue() == null) {
+                showNotification("Please fill in all fields", true);
+                return;
+            }
+
             selected.setFullName(name.getText());
             selected.setEmail(email.getText());
             selected.setPhone(phone.getText());
             selected.setGender(gender.getValue());
-            userService.updateUser(selected);
-            loadUserData();
-            
-            // Show success notification
-            showNotification("User updated successfully");
+
+            if (userService.updateUser(selected)) {
+                loadUserData();
+                showNotification("User updated successfully");
+            } else {
+                showNotification("Failed to update user", true);
+            }
         } else {
             showNotification("Please select a user to update", true);
         }
     }
 
+    /**
+     * Delete a user
+     */
     private void deleteUser() {
         User selected = userTableView.getSelectionModel().getSelectedItem();
         if (selected != null) {
@@ -446,53 +411,53 @@ public class AdminDashboard extends Application {
             alert.setTitle("Confirm Deletion");
             alert.setHeaderText("Delete User");
             alert.setContentText("Are you sure you want to delete " + selected.getFullName() + "?");
-            
+
             if (alert.showAndWait().get() == ButtonType.OK) {
-                userService.deleteUser(selected.getId());
-                loadUserData();
-                showNotification("User deleted successfully");
+                if (userService.deleteUser(selected.getId())) {
+                    loadUserData();
+                    showNotification("User deleted successfully");
+                } else {
+                    showNotification("Failed to delete user. The user may have active polls.", true);
+                }
             }
         } else {
             showNotification("Please select a user to delete", true);
         }
     }
 
+    /**
+     * Load user data into the table
+     */
     private void loadUserData() {
         userTableView.setItems(userService.getAllUsers());
     }
 
+    /**
+     * Create the poll management panel
+     * composition
+     */
     private VBox createPollManagementPane() {
         VBox pane = new VBox(20);
-        pane.setPadding(new Insets(25));
-        pane.setStyle("-fx-background-color: " + BACKGROUND_COLOR + ";");
+        pane.getStyleClass().add("content-area");
 
         // Header section
         HBox header = new HBox();
         header.setAlignment(Pos.CENTER_LEFT);
-        
+        header.setSpacing(10);
         Label title = new Label("Poll Management");
-        title.setFont(Font.font("Arial", FontWeight.BOLD, 24));
-        title.setTextFill(Color.valueOf(SECONDARY_COLOR));
-        
+        title.getStyleClass().add("section-title");
         Region spacer = new Region();
         HBox.setHgrow(spacer, Priority.ALWAYS);
-        
-        Button newPollBtn = createButton("Create New Poll", PRIMARY_COLOR);
-        newPollBtn.setOnAction(e -> {
-            // Auto-scroll to the form section
-            // In a real app, you might want to use a ScrollPane and scroll to the form
-        });
-        
+        Button newPollBtn = createButton("Create New Poll", "button-primary");
         header.getChildren().addAll(title, spacer, newPollBtn);
 
         // Stats cards
         HBox statsBox = new HBox(15);
         statsBox.setPrefHeight(100);
-        
-        VBox totalPollsCard = createStatsCard("Total Polls", "12", "#3498db");
-        VBox activePollsCard = createStatsCard("Active Polls", "8", "#2ecc71");
-        VBox completedPollsCard = createStatsCard("Completed", "4", "#e74c3c");
-        VBox totalVotesCard = createStatsCard("Total Votes", "2,548", "#f39c12");
+        VBox totalPollsCard = createStatsCard("Total Polls", String.valueOf(pollService.getPollCount()), "stats-primary");
+        VBox activePollsCard = createStatsCard("Active Polls", String.valueOf(pollService.getActivePollCount()), "stats-success");
+        VBox completedPollsCard = createStatsCard("Completed", String.valueOf(pollService.getCompletedPollCount()), "stats-accent");
+        VBox totalVotesCard = createStatsCard("Total Votes", String.valueOf(pollService.getTotalVoteCount()), "stats-warning");
         
         statsBox.getChildren().addAll(totalPollsCard, activePollsCard, completedPollsCard, totalVotesCard);
         HBox.setHgrow(totalPollsCard, Priority.ALWAYS);
@@ -502,225 +467,626 @@ public class AdminDashboard extends Application {
 
         // Poll table card
         VBox tableCard = createCard();
-        
+
         // Create poll table
         pollTableView = new TableView<>();
         pollTableView.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
         pollTableView.setPlaceholder(new Label("No polls found"));
         setupPollTableColumns();
-        
         tableCard.getChildren().add(pollTableView);
 
         // Form card
         VBox formCard = createCard();
         formCard.setSpacing(15);
-        
         Label formTitle = new Label("Create/Edit Poll");
-        formTitle.setFont(Font.font("Arial", FontWeight.BOLD, 16));
-        
+        formTitle.getStyleClass().add("form-title");
+
         // Form fields in grid
         GridPane form = new GridPane();
         form.setHgap(15);
         form.setVgap(15);
         form.setPadding(new Insets(15, 0, 15, 0));
-        
+
         TextField nameField = createTextField("Poll Name");
         TextField candidate1Field = createTextField("Candidate 1 Name");
         TextField candidate2Field = createTextField("Candidate 2 Name");
-        
+
         // Status combobox
         ComboBox<String> statusCombo = new ComboBox<>(
-            FXCollections.observableArrayList("Draft", "Active", "Completed")
+                FXCollections.observableArrayList("Draft", "Active", "Completed")
         );
         statusCombo.setPromptText("Select Status");
-        styleComboBox(statusCombo);
-        
-        // Date selector
-        DatePicker datePicker = new DatePicker();
-        datePicker.setPromptText("End Date");
-        datePicker.setPrefHeight(35);
-        datePicker.setStyle(
-            "-fx-background-radius: 4px;" +
-            "-fx-border-radius: 4px;" +
-            "-fx-border-color: #dcdde1;" +
-            "-fx-border-width: 1px;" +
-            "-fx-padding: 5px 10px;"
-        );
-        
+        statusCombo.getStyleClass().add("combo-box");
+
         // Add form fields to grid
         form.addRow(0, createFormLabel("Poll Name:"), nameField);
         form.addRow(1, createFormLabel("Candidate 1:"), candidate1Field);
         form.addRow(2, createFormLabel("Candidate 2:"), candidate2Field);
         form.addRow(3, createFormLabel("Status:"), statusCombo);
-        form.addRow(4, createFormLabel("End Date:"), datePicker);
-        
+
         // Make fields expand to fill available space
         GridPane.setHgrow(nameField, Priority.ALWAYS);
         GridPane.setHgrow(candidate1Field, Priority.ALWAYS);
         GridPane.setHgrow(candidate2Field, Priority.ALWAYS);
         GridPane.setHgrow(statusCombo, Priority.ALWAYS);
-        GridPane.setHgrow(datePicker, Priority.ALWAYS);
-        
+
+        // Status change buttons
+        HBox statusButtons = new HBox(10);
+        statusButtons.setAlignment(Pos.CENTER_LEFT);
+        statusButtons.setPadding(new Insets(10, 0, 0, 0));
+        Button activateBtn = createButton("Activate Poll", "button-success");
+        Button completeBtn = createButton("Complete Poll", "button-warning");
+        statusButtons.getChildren().addAll(activateBtn, completeBtn);
+
         // Action buttons
         HBox buttons = new HBox(10);
         buttons.setAlignment(Pos.CENTER_RIGHT);
-        
-        Button clearBtn = createButton("Clear", "#95a5a6");
-        Button createBtn = createButton("Create Poll", PRIMARY_COLOR);
-        Button updateBtn = createButton("Update", "#f39c12");
-        
-        buttons.getChildren().addAll(clearBtn, updateBtn, createBtn);
-        
+        Button clearBtn = createButton("Clear", "button-muted");
+        Button createBtn = createButton("Create Poll", "button-primary");
+        Button updateBtn = createButton("Update", "button-warning");
+        Button deleteBtn = createButton("Delete", "button-accent");
+        buttons.getChildren().addAll(clearBtn, deleteBtn, updateBtn, createBtn);
+
         // Event Handlers
-        createBtn.setOnAction(e -> createPoll(nameField, candidate1Field, candidate2Field));
-        updateBtn.setOnAction(e -> updatePoll(nameField, candidate1Field, candidate2Field));
+        createBtn.setOnAction(e -> createPoll(nameField, candidate1Field, candidate2Field, statusCombo));
+        updateBtn.setOnAction(e -> updatePoll(nameField, candidate1Field, candidate2Field, statusCombo));
+        deleteBtn.setOnAction(e -> deletePoll());
         clearBtn.setOnAction(e -> {
             nameField.clear();
             candidate1Field.clear();
             candidate2Field.clear();
             statusCombo.getSelectionModel().clearSelection();
-            datePicker.setValue(null);
+            pollTableView.getSelectionModel().clearSelection();
         });
-        
+        activateBtn.setOnAction(e -> activatePoll());
+        completeBtn.setOnAction(e -> completePoll());
+
         // Poll selection handling
         pollTableView.getSelectionModel().selectedItemProperty().addListener((obs, oldSelection, newSelection) -> {
             if (newSelection != null) {
                 nameField.setText(newSelection.getName());
                 candidate1Field.setText(newSelection.getCandidate1());
                 candidate2Field.setText(newSelection.getCandidate2());
+                statusCombo.setValue(newSelection.getStatus());
             }
         });
 
-        formCard.getChildren().addAll(formTitle, form, buttons);
+        Separator separator = new Separator();
+        separator.getStyleClass().add("separator");
+        formCard.getChildren().addAll(formTitle, form, statusButtons, separator, buttons);
 
         // Add all components to main pane
         pane.getChildren().addAll(header, statsBox, tableCard, formCard);
-        loadPollData();
-        
         return pane;
     }
-    
-    private VBox createStatsCard(String label, String value, String color) {
-        VBox card = new VBox(5);
-        card.setAlignment(Pos.CENTER_LEFT);
-        card.setPadding(new Insets(15));
-        card.setStyle(
-            "-fx-background-color: white;" +
-            "-fx-background-radius: 8px;" +
-            "-fx-border-radius: 8px;" +
-            "-fx-border-color: " + color + ";" +
-            "-fx-border-width: 0 0 0 5px;"
+
+    /**
+     * Shows a statistics popup with voting percentages and a results button
+     * 
+     * @param poll The poll to show statistics for
+     */
+    private void showPollStatisticsPopup(Poll poll) {
+        // Create a new stage for the statistics popup
+        Stage statsStage = new Stage();
+        statsStage.initModality(Modality.APPLICATION_MODAL);
+        statsStage.initStyle(StageStyle.DECORATED);
+        statsStage.setTitle("Poll Statistics: " + poll.getName());
+        statsStage.setMinWidth(550);
+        statsStage.setMinHeight(400);
+        
+        // Create the main container
+        VBox mainContainer = new VBox(20);
+        mainContainer.setPadding(new Insets(25));
+        mainContainer.setStyle("-fx-background-color: white;");
+        
+        // Header
+        Label titleLabel = new Label("Poll Statistics");
+        titleLabel.setStyle("-fx-font-size: 22px; -fx-font-weight: bold;");
+        
+        Label pollNameLabel = new Label(poll.getName());
+        pollNameLabel.setStyle("-fx-font-size: 18px; -fx-text-fill: #555;");
+        
+        // Status indicator
+        HBox statusBox = new HBox(10);
+        statusBox.setAlignment(Pos.CENTER_LEFT);
+        
+        Label statusTextLabel = new Label("Status:");
+        statusTextLabel.setStyle("-fx-font-weight: bold;");
+        
+        Label statusValueLabel = new Label(poll.getStatus());
+        if ("Active".equals(poll.getStatus())) {
+            statusValueLabel.setStyle("-fx-text-fill: #4CAF50; -fx-font-weight: bold;");
+        } else if ("Completed".equals(poll.getStatus())) {
+            statusValueLabel.setStyle("-fx-text-fill: #FF5252; -fx-font-weight: bold;");
+        } else {
+            statusValueLabel.setStyle("-fx-text-fill: #78909C; -fx-font-weight: bold;");
+        }
+        
+        statusBox.getChildren().addAll(statusTextLabel, statusValueLabel);
+        
+        // Separator
+        Separator separator = new Separator();
+        separator.setStyle("-fx-opacity: 0.3;");
+        
+        // Vote distribution with percentages
+        Label distributionLabel = new Label("Vote Distribution");
+        distributionLabel.setStyle("-fx-font-size: 16px; -fx-font-weight: bold; -fx-padding: 10 0 5 0;");
+        
+        // Calculate percentages (for a real app, you would get actual votes)
+        int totalVotes = poll.getTotalVotes();
+        int candidate1Votes = totalVotes / 2 + (totalVotes % 2); // Just split votes for demonstration
+        int candidate2Votes = totalVotes / 2;
+        double candidate1Percentage = totalVotes > 0 ? (double)candidate1Votes / totalVotes * 100 : 0;
+        double candidate2Percentage = totalVotes > 0 ? (double)candidate2Votes / totalVotes * 100 : 0;
+        
+        // Chart container
+        VBox chartContainer = new VBox(20);
+        chartContainer.setPadding(new Insets(15));
+        chartContainer.setStyle(
+                "-fx-background-color: #F5F7FA;" +
+                "-fx-background-radius: 8px;" +
+                "-fx-border-color: #E0E0E0;" +
+                "-fx-border-width: 1px;" +
+                "-fx-border-radius: 8px;"
         );
         
-        DropShadow dropShadow = new DropShadow();
-        dropShadow.setRadius(5.0);
-        dropShadow.setOffsetX(0);
-        dropShadow.setOffsetY(2.0);
-        dropShadow.setColor(Color.color(0, 0, 0, 0.1));
-        card.setEffect(dropShadow);
+        // Candidate 1 bar
+        Label cand1NameLabel = new Label(poll.getCandidate1());
+        cand1NameLabel.setStyle("-fx-font-weight: bold;");
         
+        HBox cand1BarContainer = new HBox(10);
+        cand1BarContainer.setAlignment(Pos.CENTER_LEFT);
+        
+        HBox cand1Bar = new HBox();
+        cand1Bar.setPrefHeight(30);
+        cand1Bar.setPrefWidth(Math.max(10, (candidate1Percentage / 100) * 350));
+        cand1Bar.setStyle(
+                "-fx-background-color: #1976D2;" +
+                "-fx-background-radius: 5px;"
+        );
+        
+        Label cand1PercentLabel = new Label(String.format("%.1f%%", candidate1Percentage));
+        cand1PercentLabel.setStyle("-fx-font-weight: bold; -fx-text-fill: #1976D2;");
+        
+        cand1BarContainer.getChildren().addAll(cand1Bar, cand1PercentLabel);
+        
+        Label cand1VotesLabel = new Label(candidate1Votes + " votes");
+        cand1VotesLabel.setStyle("-fx-text-fill: #78909C;");
+        
+        VBox cand1Box = new VBox(5);
+        cand1Box.getChildren().addAll(cand1NameLabel, cand1BarContainer, cand1VotesLabel);
+        
+        // Candidate 2 bar
+        Label cand2NameLabel = new Label(poll.getCandidate2());
+        cand2NameLabel.setStyle("-fx-font-weight: bold;");
+        
+        HBox cand2BarContainer = new HBox(10);
+        cand2BarContainer.setAlignment(Pos.CENTER_LEFT);
+        
+        HBox cand2Bar = new HBox();
+        cand2Bar.setPrefHeight(30);
+        cand2Bar.setPrefWidth(Math.max(10, (candidate2Percentage / 100) * 350));
+        cand2Bar.setStyle(
+                "-fx-background-color: #FF5252;" +
+                "-fx-background-radius: 5px;"
+        );
+        
+        Label cand2PercentLabel = new Label(String.format("%.1f%%", candidate2Percentage));
+        cand2PercentLabel.setStyle("-fx-font-weight: bold; -fx-text-fill: #FF5252;");
+        
+        cand2BarContainer.getChildren().addAll(cand2Bar, cand2PercentLabel);
+        
+        Label cand2VotesLabel = new Label(candidate2Votes + " votes");
+        cand2VotesLabel.setStyle("-fx-text-fill: #78909C;");
+        
+        VBox cand2Box = new VBox(5);
+        cand2Box.getChildren().addAll(cand2NameLabel, cand2BarContainer, cand2VotesLabel);
+        
+        // Total votes
+        Label totalVotesLabel = new Label("Total Votes: " + totalVotes);
+        totalVotesLabel.setStyle("-fx-font-weight: bold; -fx-padding: 10px 0 0 0;");
+        
+        chartContainer.getChildren().addAll(cand1Box, cand2Box, totalVotesLabel);
+        
+        // Bottom buttons
+        HBox buttonBox = new HBox(15);
+        buttonBox.setAlignment(Pos.CENTER_RIGHT);
+        
+        // Results button (shows who won in a popup)
+        Button resultsBtn = createButton("Show Results", "button-success");
+        resultsBtn.setPrefWidth(150);
+        resultsBtn.setOnAction(e -> showResultsPopup(poll, candidate1Votes, candidate2Votes));
+        
+        // Close button
+        Button closeBtn = createButton("Close", "button-muted");
+        closeBtn.setPrefWidth(120);
+        closeBtn.setOnAction(e -> statsStage.close());
+        
+        buttonBox.getChildren().addAll(resultsBtn, closeBtn);
+        
+        // Add all components to the main container
+        mainContainer.getChildren().addAll(
+                titleLabel,
+                pollNameLabel,
+                statusBox,
+                separator,
+                distributionLabel,
+                chartContainer,
+                buttonBox
+        );
+        
+        // Create and show the scene
+        Scene scene = new Scene(mainContainer);
+        statsStage.setScene(scene);
+        statsStage.show();
+    }
+    
+    /**
+     * Shows a results popup indicating who won the voting
+     * 
+     * @param poll The poll to show results for
+     * @param candidate1Votes Votes for candidate 1
+     * @param candidate2Votes Votes for candidate 2
+     */
+    private void showResultsPopup(Poll poll, int candidate1Votes, int candidate2Votes) {
+        // Create stage
+        Stage resultsStage = new Stage();
+        resultsStage.initModality(Modality.APPLICATION_MODAL);
+        resultsStage.initStyle(StageStyle.DECORATED);
+        resultsStage.setTitle("Poll Results");
+        resultsStage.setWidth(400);
+        resultsStage.setHeight(300);
+        
+        // Create container
+        VBox container = new VBox(20);
+        container.setPadding(new Insets(30));
+        container.setAlignment(Pos.CENTER);
+        container.setStyle("-fx-background-color: white;");
+        
+        // Results header
+        Label titleLabel = new Label("Poll Results");
+        titleLabel.setStyle("-fx-font-size: 22px; -fx-font-weight: bold;");
+        
+        Label pollNameLabel = new Label(poll.getName());
+        pollNameLabel.setStyle("-fx-font-size: 16px; -fx-text-fill: #555;");
+        
+        // Determine winner
+        String winnerName;
+        String winnerMessage;
+        
+        if (candidate1Votes > candidate2Votes) {
+            winnerName = poll.getCandidate1();
+            winnerMessage = "is the winner!";
+        } else if (candidate2Votes > candidate1Votes) {
+            winnerName = poll.getCandidate2();
+            winnerMessage = "is the winner!";
+        } else {
+            winnerName = "No candidate";
+            winnerMessage = "It's a tie!";
+        }
+        
+        // Create winner box
+        VBox winnerBox = new VBox(10);
+        winnerBox.setAlignment(Pos.CENTER);
+        winnerBox.setPadding(new Insets(20));
+        winnerBox.setStyle(
+                "-fx-background-color: #F8F9FA;" +
+                "-fx-background-radius: 10px;" +
+                "-fx-border-color: #EAEAEA;" +
+                "-fx-border-width: 1px;" +
+                "-fx-border-radius: 10px;"
+        );
+        
+        // Winner emoji/icon
+        Label trophyLabel = new Label("🏆");
+        trophyLabel.setStyle("-fx-font-size: 40px;");
+        
+        // Winner name
+        Label winnerNameLabel = new Label(winnerName);
+        winnerNameLabel.setStyle("-fx-font-size: 24px; -fx-font-weight: bold; -fx-text-fill: #4CAF50;");
+        
+        // Winner message
+        Label winnerMessageLabel = new Label(winnerMessage);
+        winnerMessageLabel.setStyle("-fx-font-size: 16px;");
+        
+        // Vote counts
+        Label voteCountsLabel = new Label(String.format(
+                "Final vote count: %d to %d", 
+                Math.max(candidate1Votes, candidate2Votes), 
+                Math.min(candidate1Votes, candidate2Votes)
+        ));
+        voteCountsLabel.setStyle("-fx-font-size: 14px; -fx-text-fill: #78909C;");
+        
+        winnerBox.getChildren().addAll(trophyLabel, winnerNameLabel, winnerMessageLabel, voteCountsLabel);
+        
+        // Close button
+        Button closeBtn = createButton("Close", "button-primary");
+        closeBtn.setPrefWidth(120);
+        closeBtn.setOnAction(e -> resultsStage.close());
+        
+        // Add components to main container
+        container.getChildren().addAll(titleLabel, pollNameLabel, winnerBox, closeBtn);
+        
+        // Create and show scene
+        Scene scene = new Scene(container);
+        resultsStage.setScene(scene);
+        resultsStage.show();
+    }
+
+    /**
+     * Create a stats card with a value and label
+     */
+    private VBox createStatsCard(String label, String value, String styleClass) {
+        VBox card = new VBox(5);
+        card.getStyleClass().addAll("stats-card", styleClass);
+        card.setAlignment(Pos.CENTER_LEFT);
+
         Label valueLabel = new Label(value);
-        valueLabel.setFont(Font.font("Arial", FontWeight.BOLD, 24));
-        valueLabel.setTextFill(Color.valueOf(color));
-        
+        valueLabel.getStyleClass().add("stats-value");
+
         Label titleLabel = new Label(label);
-        titleLabel.setFont(Font.font("Arial", FontWeight.NORMAL, 14));
-        titleLabel.setTextFill(Color.GRAY);
-        
+        titleLabel.getStyleClass().add("stats-title");
+
         card.getChildren().addAll(valueLabel, titleLabel);
-        
         return card;
     }
 
+    /**
+     * Set up columns for the poll table
+     */
     private void setupPollTableColumns() {
         TableColumn<Poll, String> nameCol = new TableColumn<>("Poll Name");
         nameCol.setCellValueFactory(cellData -> cellData.getValue().nameProperty());
         nameCol.setPrefWidth(150);
-        
+
         TableColumn<Poll, String> cand1Col = new TableColumn<>("Candidate 1");
         cand1Col.setCellValueFactory(cellData -> cellData.getValue().candidate1Property());
-        cand1Col.setPrefWidth(120);
-        
+        cand1Col.setPrefWidth(100);
+
         TableColumn<Poll, String> cand2Col = new TableColumn<>("Candidate 2");
         cand2Col.setCellValueFactory(cellData -> cellData.getValue().candidate2Property());
-        cand2Col.setPrefWidth(120);
-        
+        cand2Col.setPrefWidth(100);
+
         TableColumn<Poll, Number> votesCol = new TableColumn<>("Total Votes");
         votesCol.setCellValueFactory(cellData -> cellData.getValue().totalVotesProperty());
-        votesCol.setPrefWidth(100);
-        
-        // Add status column
+        votesCol.setPrefWidth(80);
+
+        // Add status column with custom styling
         TableColumn<Poll, String> statusCol = new TableColumn<>("Status");
-        statusCol.setCellValueFactory(cellData -> {
-            // This would be a property in the Poll class
-            // Here we're simulating it for demonstration
-            int votes = cellData.getValue().getTotalVotes();
-            if (votes > 0) {
-                return javafx.beans.binding.Bindings.createStringBinding(() -> "Active");
-            } else {
-                return javafx.beans.binding.Bindings.createStringBinding(() -> "Draft");
-            }
+        statusCol.setCellValueFactory(cellData -> cellData.getValue().statusProperty());
+        statusCol.setPrefWidth(80);
+
+        // Set cell factory for status column to add colors
+        statusCol.setCellFactory(column -> {
+            return new TableCell<Poll, String>() {
+                @Override
+                protected void updateItem(String item, boolean empty) {
+                    super.updateItem(item, empty);
+                    if (item == null || empty) {
+                        setText(null);
+                        getStyleClass().removeAll("status-active", "status-completed", "status-draft");
+                    } else {
+                        setText(item);
+                        getStyleClass().removeAll("status-active", "status-completed", "status-draft");
+                        if ("Active".equals(item)) {
+                            getStyleClass().add("status-active");
+                        } else if ("Completed".equals(item)) {
+                            getStyleClass().add("status-completed");
+                        } else {
+                            getStyleClass().add("status-draft");
+                        }
+                    }
+                }
+            };
         });
-        statusCol.setPrefWidth(100);
         
-        // Add actions column
+        // Add action column with Results and Stats buttons
         TableColumn<Poll, Void> actionCol = new TableColumn<>("Actions");
-        actionCol.setPrefWidth(120);
-        
+        actionCol.setPrefWidth(180);
+        actionCol.setCellFactory(column -> {
+            return new TableCell<Poll, Void>() {
+                private final HBox container = new HBox(5);
+                private final Button statsBtn = new Button("Stats");
+                private final Button resultsBtn = new Button("Results");
+                
+                {
+                    // Style the stats button
+                    statsBtn.getStyleClass().add("button-info");
+                    statsBtn.setPrefHeight(30);
+                    statsBtn.setOnAction(e -> {
+                        Poll poll = getTableView().getItems().get(getIndex());
+                        showPollStatisticsPopup(poll);
+                    });
+                    
+                    // Style the results button
+                    resultsBtn.getStyleClass().add("button-success");
+                    resultsBtn.setPrefHeight(30);
+                    resultsBtn.setOnAction(e -> {
+                        Poll poll = getTableView().getItems().get(getIndex());
+                        // Calculate votes for demonstration
+                        int totalVotes = poll.getTotalVotes();
+                        int candidate1Votes = totalVotes / 2 + (totalVotes % 2);
+                        int candidate2Votes = totalVotes / 2;
+                        showResultsPopup(poll, candidate1Votes, candidate2Votes);
+                    });
+                    
+                    // Set up container
+                    container.setAlignment(Pos.CENTER);
+                    container.setPadding(new Insets(0, 0, 0, 10));
+                    container.getChildren().addAll(statsBtn, resultsBtn);
+                }
+                
+                @Override
+                protected void updateItem(Void item, boolean empty) {
+                    super.updateItem(item, empty);
+                    if (empty) {
+                        setGraphic(null);
+                    } else {
+                        Poll poll = getTableView().getItems().get(getIndex());
+                        // Enable/disable the results button based on status
+                        boolean completed = "Completed".equals(poll.getStatus());
+                        resultsBtn.setDisable(!completed);
+                        
+                        // Show both buttons
+                        setGraphic(container);
+                    }
+                }
+            };
+        });
+
         pollTableView.getColumns().addAll(nameCol, cand1Col, cand2Col, votesCol, statusCol, actionCol);
     }
 
-    private void createPoll(TextField name, TextField cand1, TextField cand2) {
+    /**
+     * Create a new poll
+     */
+    private void createPoll(TextField name, TextField cand1, TextField cand2, ComboBox<String> status) {
         if (name.getText().isEmpty() || cand1.getText().isEmpty() || cand2.getText().isEmpty()) {
             showNotification("Please fill in all fields", true);
             return;
         }
-        
-        Poll poll = new Poll(0, name.getText(), cand1.getText(), cand2.getText(), 0);
-        pollService.createPoll(poll);
-        loadPollData();
-        
-        // Show success notification
-        showNotification("Poll created successfully");
-        
-        // Clear form fields
-        name.clear();
-        cand1.clear();
-        cand2.clear();
+
+        // Create a new poll with admin user ID (1) as the creator
+        Poll poll = new Poll(
+                0,  // ID will be auto-generated
+                name.getText(), 
+                cand1.getText(), 
+                cand2.getText(),
+                status.getValue() != null ? status.getValue() : "Draft",
+                0,  // Total votes starts at 0
+                1   // Admin user ID is 1
+        );
+
+        int result = pollService.createPoll(poll);
+        if (result > 0) {
+            loadPollData();
+            showNotification("Poll created successfully");
+            // Clear form fields
+            name.clear();
+            cand1.clear();
+            cand2.clear();
+            status.getSelectionModel().clearSelection();
+        } else {
+            showNotification("Failed to create poll", true);
+        }
     }
 
-    private void updatePoll(TextField name, TextField cand1, TextField cand2) {
+    /**
+     * Update an existing poll
+     */
+    private void updatePoll(TextField name, TextField cand1, TextField cand2, ComboBox<String> status) {
         Poll selected = pollTableView.getSelectionModel().getSelectedItem();
         if (selected != null) {
             if (name.getText().isEmpty() || cand1.getText().isEmpty() || cand2.getText().isEmpty()) {
                 showNotification("Please fill in all fields", true);
                 return;
             }
-            
+
             selected.setName(name.getText());
             selected.setCandidate1(cand1.getText());
             selected.setCandidate2(cand2.getText());
-            pollService.updatePoll(selected);
-            loadPollData();
-            
-            // Show success notification
-            showNotification("Poll updated successfully");
+            if (status.getValue() != null) {
+                selected.setStatus(status.getValue());
+            }
+
+            if (pollService.updatePoll(selected)) {
+                loadPollData();
+                showNotification("Poll updated successfully");
+            } else {
+                showNotification("Failed to update poll", true);
+            }
         } else {
             showNotification("Please select a poll to update", true);
         }
     }
 
+    /**
+     * Delete a poll
+     */
+    private void deletePoll() {
+        Poll selected = pollTableView.getSelectionModel().getSelectedItem();
+        if (selected != null) {
+            // Create confirmation dialog
+            Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
+            alert.setTitle("Confirm Deletion");
+            alert.setHeaderText("Delete Poll");
+            alert.setContentText("Are you sure you want to delete poll: " + selected.getName() + "?\nThis will delete all votes for this poll.");
+
+            if (alert.showAndWait().get() == ButtonType.OK) {
+                if (pollService.deletePoll(selected.getId())) {
+                    loadPollData();
+                    showNotification("Poll deleted successfully");
+                } else {
+                    showNotification("Failed to delete poll", true);
+                }
+            }
+        } else {
+            showNotification("Please select a poll to delete", true);
+        }
+    }
+
+    /**
+     * Activate a poll
+     */
+    private void activatePoll() {
+        Poll selected = pollTableView.getSelectionModel().getSelectedItem();
+        if (selected != null) {
+            if ("Active".equals(selected.getStatus())) {
+                showNotification("Poll is already active", true);
+                return;
+            }
+
+            if (pollService.activatePoll(selected.getId())) {
+                loadPollData();
+                showNotification("Poll activated successfully");
+            } else {
+                showNotification("Failed to activate poll", true);
+            }
+        } else {
+            showNotification("Please select a poll to activate", true);
+        }
+    }
+
+    /**
+     * Complete a poll
+     */
+    private void completePoll() {
+        Poll selected = pollTableView.getSelectionModel().getSelectedItem();
+        if (selected != null) {
+            if ("Completed".equals(selected.getStatus())) {
+                showNotification("Poll is already completed", true);
+                return;
+            }
+
+            if (pollService.completePoll(selected.getId())) {
+                loadPollData();
+                showNotification("Poll marked as completed");
+            } else {
+                showNotification("Failed to complete poll", true);
+            }
+        } else {
+            showNotification("Please select a poll to complete", true);
+        }
+    }
+
+    /**
+     * Load poll data into the table
+     */
     private void loadPollData() {
         pollTableView.setItems(pollService.getAllPolls());
     }
-    
+
+    /**
+     * Show a notification to the user
+     */
     private void showNotification(String message) {
         showNotification(message, false);
     }
-    
+
+    /**
+     * Show a notification to the user with error option
+     */
     private void showNotification(String message, boolean isError) {
-        // This would be implemented with a toast notification
-        // For now, we'll use an alert
         Alert alert = new Alert(isError ? Alert.AlertType.ERROR : Alert.AlertType.INFORMATION);
         alert.setTitle(isError ? "Error" : "Success");
         alert.setHeaderText(null);

@@ -1,0 +1,345 @@
+/* 
+ * style1.css
+ * Main stylesheet for Election Management System
+ */
+
+/* Base colors */
+* {
+    -fx-primary: #3498db;
+    -fx-primary-dark: #2980b9;
+    -fx-secondary: #2c3e50;
+    -fx-secondary-light: #34495e;
+    -fx-accent: #e74c3c;
+    -fx-accent-dark: #c0392b;
+    -fx-background: #ecf0f1;
+    -fx-card-color: #ffffff;
+    -fx-success: #2ecc71;
+    -fx-warning: #f39c12;
+    -fx-muted: #95a5a6;
+}
+
+/* Root styles */
+.root {
+    -fx-background-color: -fx-background;
+    -fx-font-family: "Segoe UI", Arial, sans-serif;
+    -fx-font-size: 13px;
+}
+
+/* Header */
+.header {
+    -fx-background-color: -fx-secondary;
+    -fx-padding: 15px 25px;
+    -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.3), 10, 0, 0, 3);
+}
+
+.header-title {
+    -fx-font-size: 20px;
+    -fx-font-weight: bold;
+    -fx-text-fill: white;
+}
+
+/* Sidebar */
+.sidebar {
+    -fx-background-color: -fx-secondary;
+    -fx-padding: 15px;
+    -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.2), 5, 0, 2, 0);
+}
+
+.sidebar-label {
+    -fx-font-size: 12px;
+    -fx-font-weight: bold;
+    -fx-text-fill: lightgray;
+    -fx-padding: 10px 0px 10px 10px;
+}
+
+.sidebar-button {
+    -fx-background-color: transparent;
+    -fx-text-fill: white;
+    -fx-background-radius: 5px;
+    -fx-padding: 0px 0px 0px 10px;
+    -fx-alignment: CENTER_LEFT;
+    -fx-pref-height: 40px;
+    -fx-pref-width: 200px;
+    -fx-cursor: hand;
+}
+
+.sidebar-button:hover {
+    -fx-background-color: rgba(52, 152, 219, 0.3);
+}
+
+.sidebar-button-active {
+    -fx-background-color: -fx-primary;
+    -fx-text-fill: white;
+    -fx-background-radius: 5px;
+}
+
+/* Content area */
+.content-area {
+    -fx-background-color: -fx-background;
+    -fx-padding: 20px;
+}
+
+/* Cards */
+.card {
+    -fx-background-color: -fx-card-color;
+    -fx-background-radius: 8px;
+    -fx-padding: 15px;
+    -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.1), 5, 0, 0, 2);
+}
+
+/* Stats Cards */
+.stats-card {
+    -fx-background-color: white;
+    -fx-background-radius: 8px;
+    -fx-border-radius: 8px;
+    -fx-border-width: 0 0 0 5px;
+    -fx-padding: 15px;
+    -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.1), 5, 0, 0, 2);
+}
+
+.stats-value {
+    -fx-font-size: 24px;
+    -fx-font-weight: bold;
+}
+
+.stats-title {
+    -fx-font-size: 14px;
+    -fx-text-fill: gray;
+}
+
+.stats-primary {
+    -fx-border-color: -fx-primary;
+}
+
+.stats-primary .stats-value {
+    -fx-text-fill: -fx-primary;
+}
+
+.stats-success {
+    -fx-border-color: -fx-success;
+}
+
+.stats-success .stats-value {
+    -fx-text-fill: -fx-success;
+}
+
+.stats-accent {
+    -fx-border-color: -fx-accent;
+}
+
+.stats-accent .stats-value {
+    -fx-text-fill: -fx-accent;
+}
+
+.stats-warning {
+    -fx-border-color: -fx-warning;
+}
+
+.stats-warning .stats-value {
+    -fx-text-fill: -fx-warning;
+}
+
+/* Section titles */
+.section-title {
+    -fx-font-size: 24px;
+    -fx-font-weight: bold;
+    -fx-text-fill: -fx-secondary;
+}
+
+.form-title {
+    -fx-font-size: 16px;
+    -fx-font-weight: bold;
+    -fx-text-fill: -fx-secondary;
+    -fx-padding: 0 0 5px 0;
+}
+
+/* Form elements */
+.form-label {
+    -fx-font-size: 14px;
+    -fx-text-fill: -fx-secondary;
+}
+
+.text-field {
+    -fx-background-radius: 4px;
+    -fx-border-radius: 4px;
+    -fx-border-color: #dcdde1;
+    -fx-border-width: 1px;
+    -fx-padding: 5px 10px;
+    -fx-pref-height: 35px;
+}
+
+.text-field:focused {
+    -fx-border-color: -fx-primary;
+    -fx-border-width: 1.5px;
+}
+
+.combo-box {
+    -fx-background-radius: 4px;
+    -fx-border-radius: 4px;
+    -fx-border-color: #dcdde1;
+    -fx-border-width: 1px;
+    -fx-padding: 5px 10px;
+    -fx-pref-height: 35px;
+}
+
+.combo-box:focused {
+    -fx-border-color: -fx-primary;
+    -fx-border-width: 1.5px;
+}
+
+.combo-box .list-cell {
+    -fx-padding: 5px 10px;
+}
+
+/* Buttons */
+.button {
+    -fx-background-radius: 4px;
+    -fx-font-weight: bold;
+    -fx-pref-height: 35px;
+    -fx-padding: 0 15px;
+    -fx-cursor: hand;
+}
+
+.button-primary {
+    -fx-background-color: -fx-primary;
+    -fx-text-fill: white;
+}
+
+.button-primary:hover {
+    -fx-background-color: -fx-primary-dark;
+}
+
+.button-accent {
+    -fx-background-color: -fx-accent;
+    -fx-text-fill: white;
+}
+
+.button-accent:hover {
+    -fx-background-color: -fx-accent-dark;
+}
+
+.button-success {
+    -fx-background-color: -fx-success;
+    -fx-text-fill: white;
+}
+
+.button-success:hover {
+    -fx-background-color: derive(-fx-success, -10%);
+}
+
+.button-warning {
+    -fx-background-color: -fx-warning;
+    -fx-text-fill: white;
+}
+
+.button-warning:hover {
+    -fx-background-color: derive(-fx-warning, -10%);
+}
+
+.button-muted {
+    -fx-background-color: -fx-muted;
+    -fx-text-fill: white;
+}
+
+.button-muted:hover {
+    -fx-background-color: derive(-fx-muted, -10%);
+}
+
+/* Table styles */
+.table-view {
+    -fx-background-color: transparent;
+    -fx-border-color: #dcdde1;
+    -fx-border-width: 1px;
+    -fx-border-radius: 4px;
+}
+
+.table-view .column-header,
+.table-view .column-header .filler,
+.table-view .column-header-background .filler {
+    -fx-background-color: -fx-secondary-light;
+    -fx-text-fill: white;
+}
+
+.table-view .column-header .label {
+    -fx-text-fill: white;
+    -fx-font-weight: bold;
+    -fx-padding: 10px 5px;
+}
+
+.table-view .table-row-cell {
+    -fx-padding: 5px 0;
+}
+
+.table-view .table-row-cell:odd {
+    -fx-background-color: #f7f9fc;
+}
+
+.table-view .table-row-cell:even {
+    -fx-background-color: white;
+}
+
+.table-view .table-row-cell:selected {
+    -fx-background-color: derive(-fx-primary, 90%);
+    -fx-text-fill: -fx-secondary;
+}
+
+.table-view .placeholder .label {
+    -fx-text-fill: gray;
+    -fx-font-style: italic;
+}
+
+/* Status styles for poll table */
+.status-active {
+    -fx-text-fill: -fx-success;
+    -fx-font-weight: bold;
+}
+
+.status-completed {
+    -fx-text-fill: -fx-accent;
+    -fx-font-weight: bold;
+}
+
+.status-draft {
+    -fx-text-fill: gray;
+    -fx-font-weight: bold;
+}
+
+/* Separator */
+.separator {
+    -fx-opacity: 0.5;
+}
+
+/* Scrollbar styling */
+.scroll-bar {
+    -fx-background-color: transparent;
+    -fx-pref-width: 12px;
+}
+
+.scroll-bar .thumb {
+    -fx-background-color: derive(-fx-secondary, 70%);
+    -fx-background-radius: 6px;
+}
+
+.scroll-bar .thumb:hover {
+    -fx-background-color: derive(-fx-secondary, 50%);
+}
+
+/* Dialog styling */
+.dialog-pane {
+    -fx-background-color: -fx-background;
+}
+
+.dialog-pane .header-panel {
+    -fx-background-color: -fx-secondary;
+}
+
+.dialog-pane .header-panel .label {
+    -fx-text-fill: white;
+    -fx-font-weight: bold;
+}
+
+.dialog-pane .button {
+    -fx-background-radius: 4px;
+    -fx-font-weight: bold;
+    -fx-padding: 5px 15px;
+}

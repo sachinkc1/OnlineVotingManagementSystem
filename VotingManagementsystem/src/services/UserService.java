@@ -5,7 +5,8 @@ import models.User;
 
 public interface UserService {
     ObservableList<User> getAllUsers();
-    void addUser(User user);
-    void updateUser(User user);
-    void deleteUser(int userId);
+    int addUser(User user);
+    boolean updateUser(User user);
+    boolean deleteUser(int userId);
+    int getUserCount();
 }
